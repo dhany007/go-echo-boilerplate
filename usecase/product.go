@@ -121,5 +121,27 @@ func UpdateProduct(c echo.Context) error {
 }
 
 func DeleteProduct(c echo.Context) error {
-	return nil
+	var index int
+	id := c.Param("id")
+
+	for i, p := range products {
+		if p.ID == id {
+			index = i
+		}
+	}
+
+	if index < 0 || index > len(products) {
+		return c.JSON(http.StatusNotFound, models.GeneralResponse{
+			Status:  http.StatusNotFound,
+			Message: "data product not found",
+		})
+	}
+
+	products = append(products[:index], products[index+1:]...)
+
+	return c.JSON(http.StatusOK, models.GeneralResponse{
+		Status:  http.StatusOK,
+		Message: "success",
+		Data:    id,
+	})
 }
