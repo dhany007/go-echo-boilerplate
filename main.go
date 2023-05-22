@@ -12,9 +12,9 @@ func main() {
 
 	e.POST("/products", usecase.AddProduct)
 	e.GET("/products", usecase.GetListProduct)
-	e.GET("/product/:id", usecase.GetProductByID)
-	e.PUT("/product/:id", usecase.UpdateProduct)
-	e.DELETE("/product/:id", usecase.DeleteProduct)
+	e.GET("/products/:id", usecase.GetProductByID)
+	e.PUT("/products/:id", usecase.UpdateProduct)
+	e.DELETE("/products/:id", usecase.DeleteProduct)
 
 	e.Logger.Fatal(e.Start(":3000"))
 }

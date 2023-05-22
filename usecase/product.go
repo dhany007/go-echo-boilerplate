@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/dhany007/go-echo-boilerplate/models"
@@ -55,7 +56,29 @@ func GetListProduct(c echo.Context) error {
 }
 
 func GetProductByID(c echo.Context) error {
-	return nil
+	var product models.Product
+
+	id := c.Param("id")
+	fmt.Println("id", id)
+
+	for _, p := range products {
+		if p.ID == id {
+			product = p
+		}
+	}
+
+	if product.ID == "" {
+		return c.JSON(http.StatusNotFound, models.GeneralResponse{
+			Status:  http.StatusNotFound,
+			Message: "data product not found",
+		})
+	}
+
+	return c.JSON(http.StatusOK, models.GeneralResponse{
+		Status:  http.StatusOK,
+		Message: "success",
+		Data:    product,
+	})
 }
 
 func UpdateProduct(c echo.Context) error {
