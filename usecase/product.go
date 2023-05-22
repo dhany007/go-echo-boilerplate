@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/dhany007/go-echo-boilerplate/models"
@@ -22,7 +21,10 @@ func AddProduct(c echo.Context) error {
 	var product models.Product
 
 	if err := c.Bind(&product); err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
+			Status:  http.StatusBadRequest,
+			Message: "invalid body json",
+		})
 	}
 
 	for _, p := range products {
@@ -59,7 +61,6 @@ func GetProductByID(c echo.Context) error {
 	var product models.Product
 
 	id := c.Param("id")
-	fmt.Println("id", id)
 
 	for _, p := range products {
 		if p.ID == id {
@@ -82,7 +83,41 @@ func GetProductByID(c echo.Context) error {
 }
 
 func UpdateProduct(c echo.Context) error {
-	return nil
+	var (
+		product models.Product
+		index   int
+	)
+
+	id := c.Param("id")
+
+	if err := c.Bind(&product); err != nil {
+		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
+			Status:  http.StatusBadRequest,
+			Message: "invalid body json",
+		})
+	}
+
+	for i, p := range products {
+		if p.ID == id {
+			index = i
+		}
+	}
+	product.ID = id
+
+	if index == 0 {
+		return c.JSON(http.StatusNotFound, models.GeneralResponse{
+			Status:  http.StatusNotFound,
+			Message: "data product not found",
+		})
+	}
+
+	products[index] = product
+
+	return c.JSON(http.StatusOK, models.GeneralResponse{
+		Status:  http.StatusOK,
+		Message: "success",
+		Data:    product,
+	})
 }
 
 func DeleteProduct(c echo.Context) error {
