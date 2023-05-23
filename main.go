@@ -15,7 +15,7 @@ func main() {
 	u := usecase.NewProductUsecase(r)
 
 	e.POST("/products", u.AddProduct)
-	// e.GET("/products", usecase.GetListProduct)
+	e.GET("/products", u.GetListProduct)
 	// e.GET("/products/:id", usecase.GetProductByID)
 	// e.PUT("/products/:id", usecase.UpdateProduct)
 	// e.DELETE("/products/:id", usecase.DeleteProduct)

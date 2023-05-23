@@ -33,3 +33,11 @@ func (r *ProductsRepository) FindProduct(id string) (res models.Product, err err
 
 	return p, nil
 }
+
+func (r *ProductsRepository) GetListProduct() (res []models.Product, err error) {
+	for _, p := range Products {
+		res = append(res, p)
+	}
+
+	return
+}

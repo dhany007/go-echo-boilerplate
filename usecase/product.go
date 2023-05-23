@@ -26,7 +26,7 @@ func NewProductUsecase(r *repository.ProductsRepository) *ProductUsecase {
 	return &ProductUsecase{r}
 }
 
-func (p *ProductUsecase) AddProduct(c echo.Context) error {
+func (u *ProductUsecase) AddProduct(c echo.Context) error {
 	var args models.Product
 
 	if err := c.Bind(&args); err != nil {
@@ -36,7 +36,7 @@ func (p *ProductUsecase) AddProduct(c echo.Context) error {
 		})
 	}
 
-	product, err := p.Repo.AddProduct(args)
+	product, err := u.Repo.AddProduct(args)
 	if err != nil {
 		e := models.GeneralResponse{
 			Status:  http.StatusInternalServerError,
@@ -44,7 +44,7 @@ func (p *ProductUsecase) AddProduct(c echo.Context) error {
 		}
 
 		if errors.Is(err, models.ErrDataExists) {
-			e.Status = http.StatusNotFound
+			e.Status = http.StatusBadRequest
 			e.Message = "data exists"
 		}
 
@@ -60,15 +60,25 @@ func (p *ProductUsecase) AddProduct(c echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
-// func GetListProduct(c echo.Context) error {
-// 	response := models.GeneralResponse{
-// 		Status:  http.StatusOK,
-// 		Message: "success",
-// 		Data:    products,
-// 	}
+func (u *ProductUsecase) GetListProduct(c echo.Context) error {
+	products, err := u.Repo.GetListProduct()
+	if err != nil {
+		e := models.GeneralResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "internal server error",
+		}
 
-// 	return c.JSON(http.StatusOK, response)
-// }
+		return c.JSON(e.Status, err)
+	}
+
+	result := models.GeneralResponse{
+		Status:  http.StatusOK,
+		Message: "success",
+		Data:    products,
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
 
 // func GetProductByID(c echo.Context) error {
 // 	var product models.Product
