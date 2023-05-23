@@ -10,10 +10,10 @@
 - Endpoint: ```POST {{host}}/products```
 - Param: -
 - Body:
-  - `id: string`
-  - `name: string`
-  - `quantity: int64`
-  - `price: int64`
+  - `id: string, required`
+  - `name: string, required;min=3`
+  - `quantity: int64, required;min=1`
+  - `price: int64, required;min=1`
   ```
   {
     "id": "P001",
