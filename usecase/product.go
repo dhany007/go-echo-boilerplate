@@ -5,18 +5,10 @@ import (
 	"net/http"
 
 	"github.com/dhany007/go-echo-boilerplate/models"
+	cst "github.com/dhany007/go-echo-boilerplate/models/constant"
 	"github.com/dhany007/go-echo-boilerplate/repository"
 	"github.com/labstack/echo/v4"
 )
-
-func Ping(c echo.Context) error {
-	response := models.GeneralResponse{
-		Status:  http.StatusOK,
-		Message: "success",
-	}
-
-	return c.JSON(http.StatusOK, response)
-}
 
 type ProductUsecase struct {
 	Repo *repository.ProductsRepository
@@ -32,7 +24,7 @@ func (u *ProductUsecase) AddProduct(c echo.Context) error {
 	if err := c.Bind(&args); err != nil {
 		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
 			Status:  http.StatusBadRequest,
-			Message: "invalid body json",
+			Message: cst.InvalidBodyJsonMsg,
 		})
 	}
 
@@ -40,12 +32,12 @@ func (u *ProductUsecase) AddProduct(c echo.Context) error {
 	if err != nil {
 		e := models.GeneralResponse{
 			Status:  http.StatusInternalServerError,
-			Message: "internal server error",
+			Message: cst.InternalServerErrorMsg,
 		}
 
-		if errors.Is(err, models.ErrDataExists) {
+		if errors.Is(err, cst.ErrDataExists) {
 			e.Status = http.StatusBadRequest
-			e.Message = "data exists"
+			e.Message = cst.ErrDataExists.Error()
 		}
 
 		return c.JSON(e.Status, e)
@@ -53,7 +45,7 @@ func (u *ProductUsecase) AddProduct(c echo.Context) error {
 
 	response := models.GeneralResponse{
 		Status:  http.StatusCreated,
-		Message: "success",
+		Message: cst.Success,
 		Data:    product,
 	}
 
@@ -65,106 +57,121 @@ func (u *ProductUsecase) GetListProduct(c echo.Context) error {
 	if err != nil {
 		e := models.GeneralResponse{
 			Status:  http.StatusInternalServerError,
-			Message: "internal server error",
+			Message: cst.InternalServerErrorMsg,
 		}
 
 		return c.JSON(e.Status, err)
 	}
 
-	result := models.GeneralResponse{
+	response := models.GeneralResponse{
 		Status:  http.StatusOK,
-		Message: "success",
+		Message: cst.Success,
 		Data:    products,
 	}
 
-	return c.JSON(http.StatusOK, result)
+	return c.JSON(http.StatusOK, response)
 }
 
-// func GetProductByID(c echo.Context) error {
-// 	var product models.Product
+func (u *ProductUsecase) GetProductByID(c echo.Context) error {
+	id := c.Param("id")
+	if id == cst.EmptyString {
+		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
+			Status:  http.StatusBadRequest,
+			Message: cst.InvalidParameterIDMsg,
+		})
+	}
 
-// 	id := c.Param("id")
+	product, err := u.Repo.FindProduct(id)
+	if err != nil {
+		e := models.GeneralResponse{
+			Status:  http.StatusInternalServerError,
+			Message: cst.InternalServerErrorMsg,
+		}
 
-// 	for _, p := range products {
-// 		if p.ID == id {
-// 			product = p
-// 		}
-// 	}
+		if errors.Is(err, cst.ErrDataNotFound) {
+			e.Status = http.StatusNotFound
+			e.Message = cst.ErrDataNotFound.Error()
+		}
 
-// 	if product.ID == "" {
-// 		return c.JSON(http.StatusNotFound, models.GeneralResponse{
-// 			Status:  http.StatusNotFound,
-// 			Message: "data product not found",
-// 		})
-// 	}
+		return c.JSON(http.StatusInternalServerError, e)
+	}
 
-// 	return c.JSON(http.StatusOK, models.GeneralResponse{
-// 		Status:  http.StatusOK,
-// 		Message: "success",
-// 		Data:    product,
-// 	})
-// }
+	return c.JSON(http.StatusOK, models.GeneralResponse{
+		Status:  http.StatusOK,
+		Message: cst.Success,
+		Data:    product,
+	})
+}
 
-// func UpdateProduct(c echo.Context) error {
-// 	var (
-// 		product models.Product
-// 		index   int
-// 	)
+func (u *ProductUsecase) UpdateProduct(c echo.Context) error {
+	var product models.Product
 
-// 	id := c.Param("id")
+	id := c.Param("id")
+	if id == cst.EmptyString {
+		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
+			Status:  http.StatusBadRequest,
+			Message: cst.InvalidParameterIDMsg,
+		})
+	}
 
-// 	if err := c.Bind(&product); err != nil {
-// 		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
-// 			Status:  http.StatusBadRequest,
-// 			Message: "invalid body json",
-// 		})
-// 	}
+	if err := c.Bind(&product); err != nil {
+		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
+			Status:  http.StatusBadRequest,
+			Message: cst.InvalidBodyJsonMsg,
+		})
+	}
 
-// 	for i, p := range products {
-// 		if p.ID == id {
-// 			index = i
-// 		}
-// 	}
-// 	product.ID = id
+	product.ID = id
 
-// 	if index == 0 {
-// 		return c.JSON(http.StatusNotFound, models.GeneralResponse{
-// 			Status:  http.StatusNotFound,
-// 			Message: "data product not found",
-// 		})
-// 	}
+	err := u.Repo.UpdateProduct(product)
+	if err != nil {
+		e := models.GeneralResponse{
+			Status:  http.StatusInternalServerError,
+			Message: cst.InternalServerErrorMsg,
+		}
 
-// 	products[index] = product
+		if errors.Is(err, cst.ErrDataNotFound) {
+			e.Status = http.StatusNotFound
+			e.Message = cst.DataNotFoundMsg
+		}
 
-// 	return c.JSON(http.StatusOK, models.GeneralResponse{
-// 		Status:  http.StatusOK,
-// 		Message: "success",
-// 		Data:    product,
-// 	})
-// }
+		return c.JSON(e.Status, e)
+	}
 
-// func DeleteProduct(c echo.Context) error {
-// 	var index int
-// 	id := c.Param("id")
+	return c.JSON(http.StatusOK, models.GeneralResponse{
+		Status:  http.StatusOK,
+		Message: cst.Success,
+		Data:    product,
+	})
+}
 
-// 	for i, p := range products {
-// 		if p.ID == id {
-// 			index = i
-// 		}
-// 	}
+func (u *ProductUsecase) DeleteProduct(c echo.Context) error {
+	id := c.Param("id")
+	if id == cst.EmptyString {
+		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
+			Status:  http.StatusBadRequest,
+			Message: cst.InvalidParameterIDMsg,
+		})
+	}
 
-// 	if index < 0 || index > len(products) {
-// 		return c.JSON(http.StatusNotFound, models.GeneralResponse{
-// 			Status:  http.StatusNotFound,
-// 			Message: "data product not found",
-// 		})
-// 	}
+	e := u.Repo.DeleteProduct(id)
+	if e != nil {
+		resp := models.GeneralResponse{
+			Status:  http.StatusInternalServerError,
+			Message: cst.InternalServerErrorMsg,
+		}
 
-// 	products = append(products[:index], products[index+1:]...)
+		if errors.Is(e, cst.ErrDataNotFound) {
+			resp.Status = http.StatusNotFound
+			resp.Message = cst.DataNotFoundMsg
+		}
 
-// 	return c.JSON(http.StatusOK, models.GeneralResponse{
-// 		Status:  http.StatusOK,
-// 		Message: "success",
-// 		Data:    id,
-// 	})
-// }
+		return c.JSON(resp.Status, resp)
+	}
+
+	return c.JSON(http.StatusOK, models.GeneralResponse{
+		Status:  http.StatusOK,
+		Message: "success",
+		Data:    id,
+	})
+}

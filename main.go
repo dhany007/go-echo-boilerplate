@@ -9,16 +9,14 @@ import (
 func main() {
 	e := echo.New()
 
-	e.GET("/ping", usecase.Ping)
-
 	r := repository.NewProductRepository()
 	u := usecase.NewProductUsecase(r)
 
 	e.POST("/products", u.AddProduct)
 	e.GET("/products", u.GetListProduct)
-	// e.GET("/products/:id", usecase.GetProductByID)
-	// e.PUT("/products/:id", usecase.UpdateProduct)
-	// e.DELETE("/products/:id", usecase.DeleteProduct)
+	e.GET("/products/:id", u.GetProductByID)
+	e.PUT("/products/:id", u.UpdateProduct)
+	e.DELETE("/products/:id", u.DeleteProduct)
 
 	e.Logger.Fatal(e.Start(":3000"))
 }
