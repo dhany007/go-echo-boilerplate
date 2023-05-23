@@ -2,7 +2,8 @@
 ## Prerequisites
 - Go 1.20.4
 - Echo https://echo.labstack.com/
-- not use database, just variable for
+- Go Validator https://github.com/go-playground/validator
+- not use database, just variable temp
 
 ## API Specs
 ### Add Products

@@ -1,12 +1,12 @@
 package usecase
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/dhany007/go-echo-boilerplate/models"
 	cst "github.com/dhany007/go-echo-boilerplate/models/constant"
 	"github.com/dhany007/go-echo-boilerplate/repository"
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -19,88 +19,46 @@ func NewProductUsecase(r *repository.ProductsRepository) *ProductUsecase {
 }
 
 func (u *ProductUsecase) AddProduct(c echo.Context) error {
-	var args models.Product
+	var args models.CreateProductArgument
 
 	if err := c.Bind(&args); err != nil {
-		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
-			Status:  http.StatusBadRequest,
-			Message: cst.InvalidBodyJsonMsg,
-		})
+		return ResultError(c, cst.ErrInvalidBodyJSON)
+	}
+
+	err := validator.New().Struct(&args)
+	if err != nil {
+		return ResultError(c, err)
 	}
 
 	product, err := u.Repo.AddProduct(args)
 	if err != nil {
-		e := models.GeneralResponse{
-			Status:  http.StatusInternalServerError,
-			Message: cst.InternalServerErrorMsg,
-		}
-
-		if errors.Is(err, cst.ErrDataExists) {
-			e.Status = http.StatusBadRequest
-			e.Message = cst.ErrDataExists.Error()
-		}
-
-		return c.JSON(e.Status, e)
+		return ResultError(c, err)
 	}
 
-	response := models.GeneralResponse{
-		Status:  http.StatusCreated,
-		Message: cst.Success,
-		Data:    product,
-	}
-
-	return c.JSON(http.StatusCreated, response)
+	return ResultWithData(c, http.StatusCreated, product)
 }
 
 func (u *ProductUsecase) GetListProduct(c echo.Context) error {
 	products, err := u.Repo.GetListProduct()
 	if err != nil {
-		e := models.GeneralResponse{
-			Status:  http.StatusInternalServerError,
-			Message: cst.InternalServerErrorMsg,
-		}
-
-		return c.JSON(e.Status, err)
+		return ResultError(c, err)
 	}
 
-	response := models.GeneralResponse{
-		Status:  http.StatusOK,
-		Message: cst.Success,
-		Data:    products,
-	}
-
-	return c.JSON(http.StatusOK, response)
+	return ResultWithData(c, http.StatusOK, products)
 }
 
 func (u *ProductUsecase) GetProductByID(c echo.Context) error {
 	id := c.Param("id")
 	if id == cst.EmptyString {
-		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
-			Status:  http.StatusBadRequest,
-			Message: cst.InvalidParameterIDMsg,
-		})
+		return ResultError(c, cst.ErrInvalidParameterID)
 	}
 
 	product, err := u.Repo.FindProduct(id)
 	if err != nil {
-		e := models.GeneralResponse{
-			Status:  http.StatusInternalServerError,
-			Message: cst.InternalServerErrorMsg,
-		}
-
-		if errors.Is(err, cst.ErrDataNotFound) {
-			e.Status = http.StatusNotFound
-			e.Message = cst.ErrDataNotFound.Error()
-		}
-
-		return c.JSON(http.StatusInternalServerError, e)
+		return ResultError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, models.GeneralResponse{
-		Status:  http.StatusOK,
-		Message: cst.Success,
-		Data:    product,
-	})
+	return ResultWithData(c, http.StatusOK, product)
 }
 
 func (u *ProductUsecase) UpdateProduct(c echo.Context) error {
@@ -108,70 +66,33 @@ func (u *ProductUsecase) UpdateProduct(c echo.Context) error {
 
 	id := c.Param("id")
 	if id == cst.EmptyString {
-		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
-			Status:  http.StatusBadRequest,
-			Message: cst.InvalidParameterIDMsg,
-		})
+		return ResultError(c, cst.ErrInvalidParameterID)
 	}
 
 	if err := c.Bind(&product); err != nil {
-		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
-			Status:  http.StatusBadRequest,
-			Message: cst.InvalidBodyJsonMsg,
-		})
+		return ResultError(c, cst.ErrInvalidBodyJSON)
 	}
 
 	product.ID = id
 
 	err := u.Repo.UpdateProduct(product)
 	if err != nil {
-		e := models.GeneralResponse{
-			Status:  http.StatusInternalServerError,
-			Message: cst.InternalServerErrorMsg,
-		}
-
-		if errors.Is(err, cst.ErrDataNotFound) {
-			e.Status = http.StatusNotFound
-			e.Message = cst.DataNotFoundMsg
-		}
-
-		return c.JSON(e.Status, e)
+		return ResultError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, models.GeneralResponse{
-		Status:  http.StatusOK,
-		Message: cst.Success,
-		Data:    product,
-	})
+	return ResultWithData(c, http.StatusOK, product)
 }
 
 func (u *ProductUsecase) DeleteProduct(c echo.Context) error {
 	id := c.Param("id")
 	if id == cst.EmptyString {
-		return c.JSON(http.StatusBadRequest, models.GeneralResponse{
-			Status:  http.StatusBadRequest,
-			Message: cst.InvalidParameterIDMsg,
-		})
+		return ResultError(c, cst.ErrInvalidParameterID)
 	}
 
 	e := u.Repo.DeleteProduct(id)
 	if e != nil {
-		resp := models.GeneralResponse{
-			Status:  http.StatusInternalServerError,
-			Message: cst.InternalServerErrorMsg,
-		}
-
-		if errors.Is(e, cst.ErrDataNotFound) {
-			resp.Status = http.StatusNotFound
-			resp.Message = cst.DataNotFoundMsg
-		}
-
-		return c.JSON(resp.Status, resp)
+		return ResultError(c, e)
 	}
 
-	return c.JSON(http.StatusOK, models.GeneralResponse{
-		Status:  http.StatusOK,
-		Message: "success",
-		Data:    id,
-	})
+	return ResultWithData(c, http.StatusOK, id)
 }

@@ -15,15 +15,17 @@ func NewProductRepository() *ProductsRepository {
 	return &ProductsRepository{}
 }
 
-func (r *ProductsRepository) AddProduct(p models.Product) (res models.Product, err error) {
+func (r *ProductsRepository) AddProduct(p models.CreateProductArgument) (res models.Product, err error) {
 	_, err = r.FindProduct(p.ID)
 	if err == nil {
 		return res, cst.ErrDataExists
 	}
 
-	Products[p.ID] = p
+	product := models.Product(p)
 
-	return p, nil
+	Products[p.ID] = product
+
+	return product, nil
 }
 
 func (r *ProductsRepository) FindProduct(id string) (res models.Product, err error) {
